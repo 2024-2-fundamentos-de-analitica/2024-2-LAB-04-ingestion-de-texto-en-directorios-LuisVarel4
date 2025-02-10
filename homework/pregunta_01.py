@@ -1,9 +1,38 @@
 # pylint: disable=import-outside-toplevel
 # pylint: disable=line-too-long
 # flake8: noqa
-"""
-Escriba el codigo que ejecute la accion solicitada en cada pregunta.
-"""
+import os
+import zipfile
+import pandas as pd
+
+
+def extract_zip(zip_path, extract_to):
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        zip_ref.extractall(extract_to)
+
+
+def read_text_files(base_path, data_type, sentiment):
+    folder_path = os.path.join(base_path, data_type, sentiment)
+    return [
+        {
+            "phrase": open(os.path.join(folder_path, file), "r").read(),
+            "target": sentiment,
+        }
+        for file in os.listdir(folder_path)
+    ]
+
+
+def process_dataset(base_path, data_type):
+    sentiments = ["negative", "positive", "neutral"]
+    dataset = []
+    for sentiment in sentiments:
+        dataset.extend(read_text_files(base_path, data_type, sentiment))
+    return dataset
+
+
+def save_to_csv(data, output_path, filename):
+    os.makedirs(output_path, exist_ok=True)
+    pd.DataFrame(data).to_csv(os.path.join(output_path, filename), index=False)
 
 
 def pregunta_01():
@@ -14,7 +43,6 @@ def pregunta_01():
 
     Como resultado se creara la carpeta "input" en la raiz del
     repositorio, la cual contiene la siguiente estructura de archivos:
-
 
     ```
     train/
@@ -69,5 +97,17 @@ def pregunta_01():
     |  4 | Tampere Science Parks is a Finnish company that owns , leases and builds office properties and it specialises in facilities for technology-oriented businesses         | neutral  |
     ```
 
-
     """
+
+    zip_path = "files/input.zip"
+    base_path = "files/input"
+    output_dir = "files/output"
+
+    extract_zip(zip_path, "files")
+
+    train_data = process_dataset(base_path, "train")
+    test_data = process_dataset(base_path, "test")
+
+    save_to_csv(train_data, output_dir, "train_dataset.csv")
+    save_to_csv(test_data, output_dir, "test_dataset.csv")
+
